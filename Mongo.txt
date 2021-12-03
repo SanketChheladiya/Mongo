@@ -1,0 +1,1736 @@
+Microsoft Windows [Version 10.0.19043.1348]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Program Files\MongoDB\Server\5.0\bin>mongo.exe
+MongoDB shell version v5.0.3
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Error: couldn't connect to server 127.0.0.1:27017, connection attempt failed: SocketException: Error connecting to 127.0.0.1:27017 :: caused by :: No connection could be made because the target machine actively refused it. :
+connect@src/mongo/shell/mongo.js:372:17
+@(connect):2:6
+exception: connect failed
+exiting with code 1
+
+C:\Program Files\MongoDB\Server\5.0\bin>mongo.exe
+MongoDB shell version v5.0.3
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("6c24e076-1816-4aba-b2a7-d21a4050d170") }
+MongoDB server version: 5.0.3
+================
+Warning: the "mongo" shell has been superseded by "mongosh",
+which delivers improved usability and compatibility.The "mongo" shell has been deprecated and will be removed in
+an upcoming release.
+We recommend you begin using "mongosh".
+For installation instructions, see
+https://docs.mongodb.com/mongodb-shell/install/
+================
+---
+The server generated these startup warnings when booting:
+        2021-12-02T17:43:00.986+05:30: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+---
+---
+        Enable MongoDB's free cloud-based monitoring service, which will then receive and display
+        metrics about your deployment (disk utilization, CPU, operation statistics, etc).
+
+        The monitoring data will be available on a MongoDB website with a unique URL accessible to you
+        and anyone you share the URL with. MongoDB may use this information to make product
+        improvements and to suggest MongoDB products and deployment options to you.
+
+        To enable free monitoring, run the following command: db.enableFreeMonitoring()
+        To permanently disable this reminder, run the following command: db.disableFreeMonitoring()
+---
+> db.test.save({a:1})
+WriteResult({ "nInserted" : 1 })
+> db.test.find()
+{ "_id" : ObjectId("61a8ba2e0fd29443e3349348"), "a" : 1 }
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+test    0.000GB
+> db
+test
+> use hr
+switched to db hr
+> db.employees.insert
+function(obj, options) {
+    if (!obj)
+        throw Error("no object passed to insert!");
+
+    options = typeof (options) === 'undefined' ? {} : options;
+
+    var flags = 0;
+
+    var wc = undefined;
+    var allowDottedFields = false;
+    if (options === undefined) {
+        // do nothing
+    } else if (typeof (options) == 'object') {
+        if (options.ordered === undefined) {
+            // do nothing, like above
+        } else {
+            flags = options.ordered ? 0 : 1;
+        }
+
+        if (options.writeConcern)
+            wc = options.writeConcern;
+        if (options.allowdotted)
+            allowDottedFields = true;
+    } else {
+        flags = options;
+    }
+
+    // 1 = continueOnError, which is synonymous with unordered in the write commands/bulk-api
+    var ordered = ((flags & 1) == 0);
+
+    if (!wc)
+        wc = this._createWriteConcern(options);
+
+    var result = undefined;
+    var startTime =
+        (typeof (_verboseShell) === 'undefined' || !_verboseShell) ? 0 : new Date().getTime();
+
+    if (this.getMongo().writeMode() != "legacy") {
+        // Bit 1 of option flag is continueOnError. Bit 0 (stop on error) is the default.
+        var bulk = ordered ? this.initializeOrderedBulkOp() : this.initializeUnorderedBulkOp();
+        var isMultiInsert = Array.isArray(obj);
+
+        if (isMultiInsert) {
+            obj.forEach(function(doc) {
+                bulk.insert(doc);
+            });
+        } else {
+            bulk.insert(obj);
+        }
+
+        try {
+            result = bulk.execute(wc);
+            if (!isMultiInsert)
+                result = result.toSingleResult();
+        } catch (ex) {
+            if (ex instanceof BulkWriteError) {
+                result = isMultiInsert ? ex.toResult() : ex.toSingleResult();
+            } else if (ex instanceof WriteCommandError) {
+                result = ex;
+            } else {
+                // Other exceptions rethrown as-is.
+                throw ex;
+            }
+        }
+    } else {
+        if (typeof (obj._id) == "undefined" && !Array.isArray(obj)) {
+            var tmp = obj;  // don't want to modify input
+            obj = {_id: new ObjectId()};
+            for (var key in tmp) {
+                obj[key] = tmp[key];
+            }
+        }
+
+        this.getMongo().insert(this._fullName, obj, flags);
+
+        // enforce write concern, if required
+        if (wc)
+            result = this.runCommand("getLastError", wc instanceof WriteConcern ? wc.toJSON() : wc);
+    }
+
+    this._lastID = obj._id;
+    this._printExtraInfo("Inserted", startTime);
+    return result;
+}
+> db.insert
+hr.insert
+> db.emp.insert({
+... "empno":2,
+... "firstname":"sanket",
+... "lastname":"chheladiya",
+... "company":"google",
+... "age":30
+... })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find().preety()
+uncaught exception: TypeError: db.emp.find(...).preety is not a function :
+@(shell):1:1
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.insert({ "id":2, "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8bcc40fd29443e334934a"),
+        "id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.remove("id":2)
+uncaught exception: SyntaxError: missing ) after argument list :
+@(shell):1:18
+> db.emp.remove({"id":2})
+WriteResult({ "nRemoved" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.insert({ "_id":2, "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.insert({ "_id":2, "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({
+        "nInserted" : 0,
+        "writeError" : {
+                "code" : 11000,
+                "errmsg" : "E11000 duplicate key error collection: hr.emp index: _id_ dup key: { _id: 2.0 }"
+        }
+})
+> db.emp.insert({ "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.insert({ "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.insert({ "empno":2, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.findone()
+uncaught exception: TypeError: db.emp.findone is not a function :
+@(shell):1:1
+> db.emp.findone({"name":"sanket"})
+uncaught exception: TypeError: db.emp.findone is not a function :
+@(shell):1:1
+> db.emp.findOne({"name":"sanket"})
+null
+> db.emp.findOne({"firstname":"sanket"})
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.find({"name":"sanket"}).pretty()
+> db.emp.find({"firstname":"sanket"}).pretty()
+{
+        "_id" : ObjectId("61a8bc3e0fd29443e3349349"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.deleteOne({"firstname","sanket"})
+uncaught exception: SyntaxError: missing : after property id :
+@(shell):1:29
+> db.emp.deleteOne({"firstname":"sanket"})
+{ "acknowledged" : true, "deletedCount" : 1 }
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.count()
+4
+> db.emp.insert({ "empno":2, "location":"USA", "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find({"location":"USA"})
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.count()
+5
+> db.emp.insert({ "empno":2, "location":"USA", "address":{"locality":"Mountain view", "state":"California"}, "firstname":"sanket", "lastname":"chheladiya", "company":"google", "age":30 })
+WriteResult({ "nInserted" : 1 })
+> db.emp.find({"location":"USA"}).pretty()
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.count()
+6
+> db.emp.update
+function(query, updateSpec, upsert, multi) {
+    var parsed = this._parseUpdate(query, updateSpec, upsert, multi);
+    var query = parsed.query;
+    var updateSpec = parsed.updateSpec;
+    const hint = parsed.hint;
+    var upsert = parsed.upsert;
+    var multi = parsed.multi;
+    var wc = parsed.wc;
+    var collation = parsed.collation;
+    var arrayFilters = parsed.arrayFilters;
+    let letParams = parsed.let;
+
+    var result = undefined;
+    var startTime =
+        (typeof (_verboseShell) === 'undefined' || !_verboseShell) ? 0 : new Date().getTime();
+
+    if (this.getMongo().writeMode() != "legacy") {
+        var bulk = this.initializeOrderedBulkOp();
+
+        if (letParams) {
+            bulk.setLetParams(letParams);
+        }
+        var updateOp = bulk.find(query);
+
+        if (hint) {
+            updateOp.hint(hint);
+        }
+
+        if (upsert) {
+            updateOp = updateOp.upsert();
+        }
+
+        if (collation) {
+            updateOp.collation(collation);
+        }
+
+        if (arrayFilters) {
+            updateOp.arrayFilters(arrayFilters);
+        }
+
+        if (multi) {
+            updateOp.update(updateSpec);
+        } else {
+            updateOp.updateOne(updateSpec);
+        }
+
+        try {
+            result = bulk.execute(wc).toSingleResult();
+        } catch (ex) {
+            if (ex instanceof BulkWriteError) {
+                result = ex.toSingleResult();
+            } else if (ex instanceof WriteCommandError) {
+                result = ex;
+            } else {
+                // Other exceptions thrown
+                throw ex;
+            }
+        }
+    } else {
+        if (collation) {
+            throw new Error("collation requires use of write commands");
+        }
+
+        if (arrayFilters) {
+            throw new Error("arrayFilters requires use of write commands");
+        }
+
+        this.getMongo().update(this._fullName, query, updateSpec, upsert, multi);
+
+        // Enforce write concern, if required
+        if (wc) {
+            result = this.runCommand("getLastError", wc instanceof WriteConcern ? wc.toJSON() : wc);
+        }
+    }
+
+    this._printExtraInfo("Updated", startTime);
+    return result;
+}
+> db.emp.find({"location":"USA"}).pretty()
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.find()
+{ "_id" : 2, "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c0790fd29443e334934b"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934c"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find()
+{ "_id" : 2, "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c0790fd29443e334934b"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934c"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.updateOne({"comapany":"google"}, {$set: "company":"microsoft"})
+uncaught exception: SyntaxError: missing } after property list :
+@(shell):1:56
+> db.emp.updateOne({{"comapany":"google"}, {$set: "company":"microsoft"}})
+uncaught exception: SyntaxError: expected property name, got '{' :
+@(shell):1:18
+> db.emp.update({"comapany":"google"}, {$set: "company":"microsoft"})
+uncaught exception: SyntaxError: missing } after property list :
+@(shell):1:53
+> db.emp.updateOne({{"comapany":"google"}, {$set: {"company":"microsoft"}})
+... ()
+... ^C
+
+> db.emp.updateOne({"comapany":"google"}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 0, "modifiedCount" : 0 }
+> db.emp.find()
+{ "_id" : 2, "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c0790fd29443e334934b"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934c"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.updateOne({"_id":2}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 1, "modifiedCount" : 1 }
+> db.emp.find()
+{ "_id" : 2, "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "microsoft", "age" : 30 }
+{ "_id" : ObjectId("61a8c0790fd29443e334934b"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934c"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.updateOne({"company":"google"}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 1, "modifiedCount" : 1 }
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.update({"company":"google"}, {$set: {"company":"microsoft"}})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.update({"company":"google"}, {$set: {"company":"microsoft"}})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.updateMany({"company":"google"}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 2, "modifiedCount" : 2 }
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+> db.emp.updateMany({{"company":"microsoft"}, {"location":"USA"}}, {$set: {"company":"google"}})
+uncaught exception: SyntaxError: expected property name, got '{' :
+@(shell):1:19
+> db.emp.updateMany({"company":"google"}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 0, "modifiedCount" : 0 }
+> db.emp.updateMany({"company":"microsoft"}, {$set: {"company":"microsoft"}})
+{ "acknowledged" : true, "matchedCount" : 6, "modifiedCount" : 0 }
+> db.emp.updateMany({"company":"microsoft"}, {$set: {"company":"google"}})
+{ "acknowledged" : true, "matchedCount" : 6, "modifiedCount" : 6 }
+> db.emp.updateMany({"company":"google"}, {$set: {"company":"microsoft"}, {})
+... ^C
+
+> db.emp.updateMany({"company":"microsoft"}, {$set: {"company":"google"}, {"location":"Redmond"}})
+uncaught exception: SyntaxError: expected property name, got '{' :
+@(shell):1:72
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+>  db.emp.update{
+... {"_id":2},
+... {
+... $set:
+... {"^C
+
+> db.emp.update(
+... {"_id":2},
+... { $set:
+...    { "company":"microsoft" }
+... }
+... )
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "microsoft",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+> db.emp.update( {"_id":3}, {$set: {"firstname":"scott", "lastname":"cook" , "company":"amazon", "age":35}
+... )
+... ^C
+
+> db.emp.update({"_id":3}, {$set: {"firstname":"scott", "lastname":"ham", "company:"amazon", "age":35}},{"upsert":true})
+uncaught exception: SyntaxError: missing : after property id :
+@(shell):1:82
+> db.emp.update({"_id": 3}, {$set: {"firstname":"scott", "lastname":"ham", "company:"amazon", "age":35}},{"upsert":true})
+uncaught exception: SyntaxError: missing : after property id :
+@(shell):1:83
+> db.emp.update({"_id": 2}, {$set: {"firstname":"scott", "lastname":"ham", "company:"amazon", "age":35}},{"upsert":true})
+uncaught exception: SyntaxError: missing : after property id :
+@(shell):1:83
+> db.emp.update({"_id": 2}, {$set: {"firstname":"scott", "lastname":"ham", "company":"amazon", "age":35}},{"upsert":true})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.emp.update({"_id": 3}, {$set: {"firstname":"scott", "lastname":"ham", "company":"amazon", "age":35}},{"upsert":true})
+WriteResult({ "nMatched" : 0, "nUpserted" : 1, "nModified" : 0, "_id" : 3 })
+> db.emp.find().pretty()
+{
+        "_id" : 2,
+        "empno" : 2,
+        "firstname" : "scott",
+        "lastname" : "ham",
+        "company" : "amazon",
+        "age" : 35
+}
+{
+        "_id" : ObjectId("61a8c0790fd29443e334934b"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+> db.emp.deleteOne({"empno":2})
+{ "acknowledged" : true, "deletedCount" : 1 }
+> db.emp.deleteOne({"empno":2})
+{ "acknowledged" : true, "deletedCount" : 1 }
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934c"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+> db.emp.deleteOne({"empno":2})
+{ "acknowledged" : true, "deletedCount" : 1 }
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+> db.emp.update({"_id": 4}, {$set: {"firstname":"maria", "lastname":"suleja", "company":"amazon", "age":35}},{"upsert":true})
+WriteResult({ "nMatched" : 0, "nUpserted" : 1, "nModified" : 0, "_id" : 4 })
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+{
+        "_id" : 4,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "maria",
+        "lastname" : "suleja"
+}
+> db.emp.find( { $or : [ {"firstname":"maria"}, {"company":"google"} ] } )
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : 4, "age" : 35, "company" : "amazon", "firstname" : "maria", "lastname" : "suleja" }
+> db.emp.find( { $or : [ {"firstname":"maria"}, {"company":"google"} ] } ).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 4,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "maria",
+        "lastname" : "suleja"
+}
+> db.emp.find( { $or : [{"firstname":"maria"}, {"company":"google"}] } )
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : 4, "age" : 35, "company" : "amazon", "firstname" : "maria", "lastname" : "suleja" }
+> db.emp.find( { {"company":"amazon",  $or : [{"firstname":"maria"}, {"company":"google"}] } )
+... db.emp.find( { $or : [{"firstname":"maria"}, {"company":"google"}] } )^C
+
+> db.emp.find( { {"company":"amazon"}, $or : [{"firstname":"maria"}, {"company":"google"}] } )
+uncaught exception: SyntaxError: expected property name, got '{' :
+@(shell):1:15
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"google"}] } )
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"amazon"}] } )
+{ "_id" : 4, "age" : 35, "company" : "amazon", "firstname" : "maria", "lastname" : "suleja" }
+> db.emp.find({}, {KEY:1} ).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d") }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e") }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f") }
+{ "_id" : 3 }
+{ "_id" : 4 }
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"google"}] }, {KEY:2} )
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"amazon"}] }, {KEY:2} )
+{ "_id" : 4 }
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"amazon"}] }, {KEY:3} )
+{ "_id" : 4 }
+> db.emp.find( { $and : [{"firstname":"maria"}, {"company":"amazon"}] }, {"firstname":"sanket"} ).pretty()
+{ "_id" : 4, "firstname" : "sanket" }
+> db.emp.find({}, {KEY:2} ).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d") }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e") }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f") }
+{ "_id" : 3 }
+{ "_id" : 4 }
+> db.emp.find({}, {"_id"} ).pretty()
+uncaught exception: SyntaxError: missing : after property id :
+@(shell):1:22
+> db.emp.find({}, {"_id":2} ).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d") }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e") }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f") }
+{ "_id" : 3 }
+{ "_id" : 4 }
+> db.emp.find({}, {"name":"sanket"} ).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "name" : "sanket" }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "name" : "sanket" }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "name" : "sanket" }
+{ "_id" : 3, "name" : "sanket" }
+{ "_id" : 4, "name" : "sanket" }
+> db.emp.find({}, {"name":"sanket"}, {"company":"amazon"}).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "name" : "sanket" }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "name" : "sanket" }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "name" : "sanket" }
+{ "_id" : 3, "name" : "sanket" }
+{ "_id" : 4, "name" : "sanket" }
+> db.emp.find({}, {"name":"sanket", "company":"amazon"}, {"company":"amazon"}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "name" : "sanket",
+        "company" : "amazon"
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "name" : "sanket",
+        "company" : "amazon"
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "name" : "sanket",
+        "company" : "amazon"
+}
+{ "_id" : 3, "name" : "sanket", "company" : "amazon" }
+{ "_id" : 4, "name" : "sanket", "company" : "amazon" }
+> db.emp.find().pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+{
+        "_id" : 4,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "maria",
+        "lastname" : "suleja"
+}
+> db.emp.find({}, {"name":"sanket", "company":"amazon"}, {"company":"amazon"}).pretty().count()
+5
+> db.emp.find({}, {"company":"amazon"}).pretty().count()
+5
+> db.emp.find({}, {"company":"amazon"}).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "company" : "amazon" }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "company" : "amazon" }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "company" : "amazon" }
+{ "_id" : 3, "company" : "amazon" }
+{ "_id" : 4, "company" : "amazon" }
+> db.emp.find({}}).pretty()
+uncaught exception: SyntaxError: missing ) after argument list :
+@(shell):1:14
+> db.emp.find({}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "empno" : 2,
+        "location" : "USA",
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "empno" : 2,
+        "location" : "USA",
+        "address" : {
+                "locality" : "Mountain view",
+                "state" : "California"
+        },
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 30
+}
+{
+        "_id" : 3,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "scott",
+        "lastname" : "ham"
+}
+{
+        "_id" : 4,
+        "age" : 35,
+        "company" : "amazon",
+        "firstname" : "maria",
+        "lastname" : "suleja"
+}
+> db.emp.find({}, {"age":35}).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "age" : 30 }
+{ "_id" : 3, "age" : 35 }
+{ "_id" : 4, "age" : 35 }
+> db.emp.find({}, {"age":35, "name":}).pretty()
+uncaught exception: SyntaxError: expected expression, got '}' :
+@(shell):1:34
+> db.emp.find({}, {"age":35, "firstname":"sanket"}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{ "_id" : 3, "age" : 35, "firstname" : "sanket" }
+{ "_id" : 4, "age" : 35, "firstname" : "sanket" }
+> db.emp.find({}, {"age":35}, {"firstname":"sanket"}).pretty()
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "age" : 30 }
+{ "_id" : 3, "age" : 35 }
+{ "_id" : 4, "age" : 35 }
+> db.emp.find({}, {"age":35, "firstname":"sanket"}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "age" : 30,
+        "firstname" : "sanket"
+}
+{ "_id" : 3, "age" : 35, "firstname" : "sanket" }
+{ "_id" : 4, "age" : 35, "firstname" : "sanket" }
+> db.emp.find({}, {"age":1, "firstname":"1"}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "age" : 30,
+        "firstname" : "1"
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "age" : 30,
+        "firstname" : "1"
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "age" : 30,
+        "firstname" : "1"
+}
+{ "_id" : 3, "age" : 35, "firstname" : "1" }
+{ "_id" : 4, "age" : 35, "firstname" : "1" }
+> db.emp.find({}, {"age":1, "firstname":"0"}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "age" : 30,
+        "firstname" : "0"
+}
+{
+        "_id" : ObjectId("61a8c6e70fd29443e334934e"),
+        "age" : 30,
+        "firstname" : "0"
+}
+{
+        "_id" : ObjectId("61a8c7750fd29443e334934f"),
+        "age" : 30,
+        "firstname" : "0"
+}
+{ "_id" : 3, "age" : 35, "firstname" : "0" }
+{ "_id" : 4, "age" : 35, "firstname" : "0" }
+> db.emp.find({}, {"age":1, "_id":0}).pretty()
+{ "age" : 30 }
+{ "age" : 30 }
+{ "age" : 30 }
+{ "age" : 35 }
+{ "age" : 35 }
+> db.emp.find({}, {"age":1, "firstname":1, "_id":0}).pretty()
+{ "firstname" : "sanket", "age" : 30 }
+{ "firstname" : "sanket", "age" : 30 }
+{ "firstname" : "sanket", "age" : 30 }
+{ "age" : 35, "firstname" : "scott" }
+{ "age" : 35, "firstname" : "maria" }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty()
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "age" : 35, "company" : "amazon", "firstname" : "scott" }
+{ "age" : 35, "company" : "amazon", "firstname" : "maria" }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty().limit(3)
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty().limit(3).skip(2)
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "age" : 35, "company" : "amazon", "firstname" : "scott" }
+{ "age" : 35, "company" : "amazon", "firstname" : "maria" }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty().limit(3).skip(1).sort({"company":1})
+{ "age" : 35, "company" : "amazon", "firstname" : "maria" }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty().limit(5).skip(1).sort({"company":1})
+{ "age" : 35, "company" : "amazon", "firstname" : "maria" }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+> db.emp.find({}, {"age":1, "firstname":1, "company":1 ,"_id":0}).pretty().limit(5).skip(1).sort({"company":-1})
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "firstname" : "sanket", "company" : "google", "age" : 30 }
+{ "age" : 35, "company" : "amazon", "firstname" : "scott" }
+{ "age" : 35, "company" : "amazon", "firstname" : "maria" }
+> db.emp.aggregate([ $group: {_id: "$company", totol_company={$sum:1}}])
+uncaught exception: SyntaxError: missing ] after element list :
+@(shell):1:25
+> db.emp.aggregate([ $group: {_id: "$company", totol_company:{$sum:1}}])
+uncaught exception: SyntaxError: missing ] after element list :
+@(shell):1:25
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}])
+{ "_id" : "google", "totol_company" : 3 }
+{ "_id" : "amazon", "totol_company" : 2 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$avg:1}}}])
+{ "_id" : "amazon", "totol_company" : 1 }
+{ "_id" : "google", "totol_company" : 1 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$min:1}}}])
+{ "_id" : "amazon", "totol_company" : 1 }
+{ "_id" : "google", "totol_company" : 1 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}])
+{ "_id" : "google", "totol_company" : 3 }
+{ "_id" : "amazon", "totol_company" : 2 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$max:1}}}])
+{ "_id" : "google", "totol_company" : 1 }
+{ "_id" : "amazon", "totol_company" : 1 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}])
+{ "_id" : "amazon", "totol_company" : 2 }
+{ "_id" : "google", "totol_company" : 3 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}])
+{ "_id" : "google", "totol_company" : 3 }
+{ "_id" : "amazon", "totol_company" : 2 }
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}]).sort({"_id":1})
+uncaught exception: TypeError: db.emp.aggregate(...).sort is not a function :
+@(shell):1:1
+> db.emp.aggregate([{$group: {_id: "$company", totol_company:{$sum:1}}}])
+{ "_id" : "google", "totol_company" : 3 }
+{ "_id" : "amazon", "totol_company" : 2 }
+> db.emp.find( { $and: [ {"company":"google}, {"name":"sanket"} ] } )
+uncaught exception: SyntaxError: missing } after property list :
+@(shell):1:46
+> db.emp.find( { $and: [ {"company":"google"}, {"name":"sanket"} ] } )
+> db.emp.find( { $and: [ {"company":"google"}, {"firstname":"sanket"} ] } )
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find( { $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1})
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find( { "age":{$gt : 29}, $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1})
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c6e70fd29443e334934e"), "empno" : 2, "location" : "USA", "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+{ "_id" : ObjectId("61a8c7750fd29443e334934f"), "empno" : 2, "location" : "USA", "address" : { "locality" : "Mountain view", "state" : "California" }, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 30 }
+> db.emp.find( { "age":{$gt : 30}, $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1})
+> db.emp.update( {"age":30}, {$set : {"age":22}})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.emp.find( { "age":{$gt : 30}, $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1})
+> db.emp.find( { "age":{$lt : 30}, $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1})
+{ "_id" : ObjectId("61a8c07b0fd29443e334934d"), "empno" : 2, "firstname" : "sanket", "lastname" : "chheladiya", "company" : "google", "age" : 22 }
+> db.emp.find( { "age":{$lt : 30}, $and: [ {"company":"google"}, {"firstname":"sanket"} ] } ).sort({"location":1}).pretty()
+{
+        "_id" : ObjectId("61a8c07b0fd29443e334934d"),
+        "empno" : 2,
+        "firstname" : "sanket",
+        "lastname" : "chheladiya",
+        "company" : "google",
+        "age" : 22
+}
+> show dbs
+admin   0.000GB
+config  0.000GB
+hr      0.000GB
+local   0.000GB
+test    0.000GB
+> use test
+switched to db test
+>
